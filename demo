@@ -1,0 +1,63 @@
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, LSTM
+
+# Step 1: Load Data
+def load_stock_data(ticker, start='2019-01-01', end='2024-01-01'):
+    df = yf.download(ticker, start=start, end=end)
+    return df[['Close']]
+
+# Step 2: Prepare Data for LSTM
+def prepare_data(data, window_size=60):
+    scaler = MinMaxScaler()
+    scaled = scaler.fit_transform(data)
+    X, y = [], []
+    for i in range(window_size, len(scaled)):
+        X.append(scaled[i - window_size:i, 0])
+        y.append(scaled[i, 0])
+    X, y = np.array(X), np.array(y)
+    X = np.reshape(X, (X.shape[0], X.shape[1], 1))
+    return X, y, scaler
+
+# Step 3: Build LSTM Model
+def build_model(input_shape):
+    model = Sequential()
+    model.add(LSTM(50, return_sequences=True, input_shape=input_shape))
+    model.add(LSTM(50))
+    model.add(Dense(1))
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    return model
+
+# Step 4: Train and Predict
+def run_prediction(ticker):
+    df = load_stock_data(ticker)
+    X, y, scaler = prepare_data(df)
+
+    model = build_model((X.shape[1], 1))
+    model.fit(X, y, epochs=5, batch_size=32)
+
+    # Predict future price using last window
+    last_window = df[-60:].values
+    scaled_window = scaler.transform(last_window)
+    scaled_window = np.reshape(scaled_window, (1, 60, 1))
+    predicted_price = model.predict(scaled_window)
+    predicted_price = scaler.inverse_transform(predicted_price)
+
+    # Plot
+    plt.plot(df.index[-100:], df['Close'][-100:], label='Actual Price')
+    plt.axhline(predicted_price[0][0], color='red', linestyle='--', label='Predicted Next Price')
+    plt.title(f'{ticker} Price Prediction')
+    plt.xlabel('Date')
+    plt.ylabel('Price')
+    plt.legend()
+    plt.show()
+
+    print(f"Predicted next closing price for {ticker}: ${predicted_price[0][0]:.2f}")
+
+# Run
+if __name__ == "__main__":
+    run_prediction("AAPL")  # You can replace AAPL with any stock ticker
