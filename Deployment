@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cracking the Market Code</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f4f7;
+      text-align: center;
+      padding: 50px;
+    }
+    h1 {
+      color: #1e3a8a;
+    }
+    form {
+      background-color: white;
+      padding: 30px;
+      border-radius: 8px;
+      display: inline-block;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    input, button {
+      padding: 10px;
+      margin: 10px;
+      width: 250px;
+      font-size: 16px;
+    }
+    .output {
+      margin-top: 20px;
+      font-size: 18px;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Cracking the Market Code</h1>
+  <h3>AI-Driven Stock Price Prediction</h3>
+
+  <form id="predictionForm">
+    <input type="text" id="stockSymbol" placeholder="Enter Stock Symbol (e.g., AAPL)" required><br>
+    <button type="submit">Predict</button>
+  </form>
+
+  <div class="output" id="result"></div>
+
+  <script>
+    document.getElementById('predictionForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const symbol = document.getElementById('stockSymbol').value;
+
+      fetch('http://localhost:5000/predict', {  // Change this to your deployed API endpoint
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ symbol: symbol }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('result').textContent = 'Predicted Price: $' + data.predicted_price;
+      })
+      .catch(error => {
+        document.getElementById('result').textContent = 'Error fetching prediction';
